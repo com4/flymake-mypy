@@ -31,7 +31,7 @@
 (defvar flymake-mypy-executable "python -mmypy"
   "The mypy executable to use for syntax checking.")
 
-(defvar flymake-mypy-output-pattern "^\\(.*\\.py\\):\\([0-9]+?\\):\\([0-9]+?\\):\\([0-9]+?\\):\\([0-9]+?\\): \\(.*?\\): \\(.*\\)$"
+(defvar flymake-mypy-output-pattern "^\\(.*\\.py\\):\\([0-9]+?\\):\\(?:\\([0-9]+?\\):\\([0-9]+?\\):\\([0-9]+?\\):\\)? \\(.*?\\): \\(.*\\)$"
   "The regex to use for parsing mypy output")
 
 (defvar-local flymake-mypy--proc nil)
@@ -97,9 +97,9 @@
 			      for filename = (match-string 1)
 			      for line-num = (string-to-number (match-string 2))
 			      ;; mypy column numbers are off by 1
-			      for col-num = (1- (string-to-number (match-string 3)))
-                              for end-line-num = (string-to-number (match-string 4))
-                              for end-col-num = (string-to-number (match-string 5))
+			      for col-num = (1- (string-to-number (or (match-string 3) "1")))
+                              for end-line-num = (string-to-number (or (match-string 4) "1"))
+                              for end-col-num = (string-to-number (or (match-string 5) "1"))
 			      for error-level = (match-string 6)
 			      for description  = (format "Mypy (%s): (%s)" error-level (match-string 7))
 			      for flymake-err-type = (cond ((string-equal error-level "error") :error)
@@ -110,8 +110,16 @@
 			      ;; for files not asked for
 			      (if (string-equal (buffer-file-name source-buffer) filename)
 				  (progn
-				    (let* ((beg-region (flymake-mypy--get-position source-buffer line-num col-num))
-					   (end-region (flymake-mypy--get-position source-buffer end-line-num end-col-num)))
+				    (let* ((beg-region (flymake-mypy--get-position
+                                                        source-buffer
+                                                        line-num
+                                                        col-num))
+					   (end-region (flymake-mypy--get-position
+                                                        source-buffer
+                                                        (max line-num end-line-num)
+                                                        (if (> end-line-num line-num)
+                                                            end-col-num
+                                                          (max col-num end-col-num)))))
 
                                       (flymake-make-diagnostic
 				       source-buffer
