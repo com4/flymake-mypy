@@ -59,8 +59,9 @@
 (defun flymake-mypy--run (report-fn &rest _args)
   ;; Not having a python interpreter is a serious problem which should cause
   ;; the backend to disable itself, so an error is signaled.
-  (unless (executable-find "python")
-    (error "Cannot find a suitable python executable for flymake-mypy"))
+  (let ((executable (car (split-string flymake-mypy-executable " "))))
+    (unless (executable-find executable)
+      (error "Cannot find the `%s' executable for flymake-mypy" executable)))
   (let ((source-buffer (current-buffer)))
     (save-restriction
       (widen)
