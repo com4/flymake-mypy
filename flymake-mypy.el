@@ -65,7 +65,7 @@
   (let ((source-buffer (current-buffer)))
     (save-restriction
       (widen)
-      (let* ((temp-file (concat (make-temp-file "flymake-mypy") ".py"))
+      (let* ((temp-file (make-temp-file "flymake-mypy" nil ".py"))
              (default-directory (if-let* ((project (project-current)))
                                     (project-root project)
                                   default-directory)))
@@ -143,7 +143,8 @@
 					  (funcall report-fn (list))))))
 			 (flymake-log :warning "Canceling obsolete check %s" proc))
 		     ;; unwind protect is similar to try/finally. this is the finally clause
-		     (kill-buffer (process-buffer proc)))))))))))
+		     (kill-buffer (process-buffer proc))
+		     (delete-file temp-file))))))))))
 
 (provide 'flymake-mypy)
 ;;; flymake-mypy.el ends here
