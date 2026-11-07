@@ -65,7 +65,9 @@
     (save-restriction
       (widen)
       (let* ((temp-file (concat (make-temp-file "flymake-mypy") ".py"))
-             (default-directory (car (last (project-current)))))
+             (default-directory (if-let* ((project (project-current)))
+                                    (project-root project)
+                                  default-directory)))
 	(write-region (point-min) (point-max) temp-file nil 'quiet)
 
 	(setq flymake-mypy--proc
