@@ -44,7 +44,7 @@
 (defun flymake-mypy-disable ()
   "Disable the Mypy checker for Flymake."
   (interactive)
-  (remove-hook 'flymake-diagnostic-functions 'flymake-mypy--run nil t))
+  (remove-hook 'flymake-diagnostic-functions 'flymake-mypy--run t))
 
 (defun flymake-mypy--get-position (buffer line column)
   "Calculate position for the given LINE and COLUMN."
