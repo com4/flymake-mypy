@@ -44,7 +44,7 @@
 (defun flymake-mypy-disable ()
   "Disable the Mypy checker for Flymake."
   (interactive)
-  (remove-hook 'flymake-diagnostic-functions 'flymake-mypy--run nil t))
+  (remove-hook 'flymake-diagnostic-functions 'flymake-mypy--run t))
 
 (defun flymake-mypy--get-position (buffer line column)
   "Calculate position for the given LINE and COLUMN."
@@ -59,13 +59,16 @@
 (defun flymake-mypy--run (report-fn &rest _args)
   ;; Not having a python interpreter is a serious problem which should cause
   ;; the backend to disable itself, so an error is signaled.
-  (unless (executable-find "python")
-    (error "Cannot find a suitable python executable for flymake-mypy"))
+  (let ((executable (car (split-string flymake-mypy-executable " "))))
+    (unless (executable-find executable)
+      (error "Cannot find the `%s' executable for flymake-mypy" executable)))
   (let ((source-buffer (current-buffer)))
     (save-restriction
       (widen)
-      (let* ((temp-file (concat (make-temp-file "flymake-mypy") ".py"))
-             (default-directory (car (last (project-current)))))
+      (let* ((temp-file (make-temp-file "flymake-mypy" nil ".py"))
+             (default-directory (if-let* ((project (project-current)))
+                                    (project-root project)
+                                  default-directory)))
 	(write-region (point-min) (point-max) temp-file nil 'quiet)
 
 	(setq flymake-mypy--proc
@@ -140,7 +143,8 @@
 					  (funcall report-fn (list))))))
 			 (flymake-log :warning "Canceling obsolete check %s" proc))
 		     ;; unwind protect is similar to try/finally. this is the finally clause
-		     (kill-buffer (process-buffer proc)))))))))))
+		     (kill-buffer (process-buffer proc))
+		     (delete-file temp-file))))))))))
 
 (provide 'flymake-mypy)
 ;;; flymake-mypy.el ends here
